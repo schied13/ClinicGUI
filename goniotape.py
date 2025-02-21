@@ -1,9 +1,10 @@
 #Goniotape GUI
 #Johnathan Schiede
+#Rowan University Electrical & Computer Engineering class of 2025
 
 
 
-
+# Import Functionality
 import pygame as pg
 import random
 import serial
@@ -15,43 +16,41 @@ from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton, QVBoxLayout, QFile
 from PySide6.QtGui import QPalette, QColor
 
 
-
+#Create Widget 
 class MyWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         
+        #Initialize variables
         self.fName = ""
         self.precaution = False
         self.caution = False
+
+        #Initialize Serial Port Connection
         self.ser = serial.Serial('COM9', 9600) 
 
         
 
-        #Text To Display Data
+        #Text for Data Display
         self.text = QLabel("Goniotape V1",
                                      alignment=Qt.AlignCenter)
         
         
         
-        #Button 
+        #Create Save Button 
         self.savebutton = QPushButton()
         self.savebutton.setText("Save")
         self.savebutton.clicked.connect(self.fileSave)
         
        
-        #Data Arrays
+        #Intialize Arrays for Data Collection
         self.timeData = np.array([])
         self.angleData = np.array([])
         self.data = np.array([0,0])
 
 
-        
-       
-         
-        
-
-
-        #Call every .1 seconds 100/1000 = .1s
+        #Initialize Timer to Acquire Data
+        # Call every .1 seconds 100/1000 = .1s
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.dataSend)
         self.text.setText("Hello Welcome Press Start to Begin Data Collection")
@@ -60,9 +59,8 @@ class MyWidget(QtWidgets.QWidget):
         self.sound = pg.mixer.Sound("beep-01a.mp3")
         
         
-        #Ailment Slider
+        #Joint Injury Selection Box
         self.injury = QComboBox(self)
-        
         self.injury.setPlaceholderText(" ")
         self.injury.addItems(["Hip","Shoulder"])
         
@@ -82,7 +80,7 @@ class MyWidget(QtWidgets.QWidget):
         self.resetbutton.setStyleSheet("background-color: red")
         self.resetbutton.clicked.connect(self.resetBut)
 
-        #Create Layout and Add Widgets 
+        #Create Layout on QApplication and Add Widgets to layout
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.text)
         self.layout.addWidget(self.injury)
@@ -95,14 +93,13 @@ class MyWidget(QtWidgets.QWidget):
         
         
         
-    ## Functionality Implementation
+    ## Implementation of Functionality 
    
 
-    #Get Data to Display    
+    #Retrieve, Store, and Display Accelerometer Data  
     def dataSend(self):
             #Get Data From Serial Port
             data = self.ser.readline().decode().split(",")
-            #0data = 0,130
             time = data[0]
             angle = data[1]
 
@@ -111,22 +108,23 @@ class MyWidget(QtWidgets.QWidget):
             self.angleData = np.append(self.angleData, angle)
 
             
-            #Set the Current Angle Being Displayed
+            #Display Data
             self.text.setText(f"Angle Degrees = {angle}, Time = {time}")
 
-            #Ailment Control 
-
+            #Precaution Detection
             if self.injury.currentText() == "Hip":
                  caution = 90>=float(angle)>=0
                  precaution = 110>=float(angle)>90
             elif self.injury.currentText() == "Shoulder":
                  caution = float(angle)>140
                  precaution = 140>=float(angle)>90
-
             else:
                  caution = False
                  precaution = False
             self.sound.stop()
+
+
+            #Changes Made based on the current precaution status
             if (precaution):
                 self.text.setStyleSheet("background-color: yellow; color: black; font-size: 24px;")
                 sound_file = "beep-01a.mp3"
@@ -152,7 +150,7 @@ class MyWidget(QtWidgets.QWidget):
 
 
     
-    #Saves File of the Angle and Time Data
+    #Saves a .txt text File of the Angle and Time Data
     def fileSave(self):
         file, _ = QFileDialog.getSaveFileName(self, "Save File", "", "Text files (*.txt);;All files (*.*)")
         if file:
